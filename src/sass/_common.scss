@@ -1,8 +1,11 @@
 .search-form-container {
+  position: fixed;
+  z-index: 100;
   padding: 10px 20px;
+  width: 100%;
 
   background-color: #23449f;
-  box-shadow: 0px 3px 1px rgba(0, 0, 0, 0.1), 0px 1px 2px rgba(0, 0, 0, 0.08),
+  box-shadow: 0px 5px 2px rgba(0, 0, 0, 0.1), 0px 1px 2px rgba(0, 0, 0, 0.08),
     0px 2px 2px rgba(0, 0, 0, 0.12);
 }
 
@@ -20,7 +23,7 @@
   transition: outline 250ms linear;
 
   &:focus-within {
-    outline: 2px solid #2196f3;
+    outline: 3px solid #2196f3;
   }
 
   & input {
@@ -39,12 +42,23 @@
     justify-content: center;
     min-width: 40px;
 
+    color: rgb(48, 45, 45);
+
     border: none;
+    outline: none;
+
+    transition: color 250ms linear, background-color 250ms linear;
 
     cursor: pointer;
+
+    &:hover,
+    &:focus {
+      color: #fff;
+      background-color: #2196f3;
+    }
   }
 }
 
 .icon-btn {
-  fill: rgb(48, 45, 45);
+  fill: currentColor;
 }

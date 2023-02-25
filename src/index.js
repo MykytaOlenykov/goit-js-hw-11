@@ -3,7 +3,7 @@ import fetchImgs from './js/fetchImgs';
 
 const refs = {
   searchForm: document.querySelector('#search-form'),
-  gallery: document.querySelector('.gallery'),
+  gallery: document.querySelector('#gallery'),
 };
 
 refs.searchForm.addEventListener('submit', onSearch);
@@ -36,8 +36,10 @@ function createCardsMarkup(dataCards) {
     .map(
       dataCard =>
         `
-  <div class="photo-card">
-    <img src="${dataCard.webformatURL}" alt="${dataCard.tags}" loading="lazy" />
+  <a class="photo-card" href="#">
+    <div class="photo-card-thumb">
+      <img class="photo-card-img" src="${dataCard.webformatURL}" alt="${dataCard.tags}" loading="lazy" />
+    </div>  
     <div class="info">
       <p class="info-item">
         <b>Likes</b>
@@ -56,7 +58,7 @@ function createCardsMarkup(dataCards) {
         ${dataCard.downloads}
       </p>
     </div>
-  </div>`
+  </a>`
     )
     .join('');
 }
