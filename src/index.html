@@ -12,24 +12,30 @@
     <link rel="stylesheet" href="./sass/index.scss" />
   </head>
   <body>
-    <div class="search-form-container">
-      <form class="search-form" id="search-form">
-        <input
-          type="text"
-          name="searchQuery"
-          autocomplete="off"
-          placeholder="Search images..."
-        />
+    <section class="search-section">
+      <div class="search-form-container">
+        <form class="search-form" id="search-form">
+          <input
+            type="text"
+            name="searchQuery"
+            autocomplete="off"
+            placeholder="Search images..."
+          />
 
-        <button type="submit">
-          <svg class="icon-btn" width="16" height="16">
-            <use href="./images/icon.svg#search"></use>
-          </svg>
-        </button>
-      </form>
-    </div>
+          <button type="submit">
+            <svg class="icon-btn" width="16" height="16">
+              <use href="./images/icon.svg#search"></use>
+            </svg>
+          </button>
+        </form>
+      </div>
 
-    <div class="gallery" id="gallery"></div>
+      <div class="gallery" id="gallery"></div>
+
+      <button type="button" class="load-more is-hidden" id="load-more">
+        Load more
+      </button>
+    </section>
 
     <script type="module" src="./index.js"></script>
   </body>

@@ -9,8 +9,6 @@
 
   @media screen and (min-width: $mini-tablet) {
     grid-template-columns: repeat(2, 1fr);
-
-    height: 300px;
   }
 
   @media screen and (min-width: $mini-laptop) {
@@ -19,6 +17,8 @@
 }
 
 .photo-card {
+  display: block;
+
   color: #000;
   text-decoration: none;
 
