@@ -1,5 +1,8 @@
+import SimpleLightbox from 'simplelightbox';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import ImgsApiService from './js/ImgsApiService';
+
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const refs = {
   searchForm: document.querySelector('#search-form'),
@@ -7,6 +10,9 @@ const refs = {
   loadMore: document.querySelector('#load-more'),
 };
 
+const gallery = new SimpleLightbox('.gallery a', {
+  captionDelay: 250,
+});
 const imgsApiService = new ImgsApiService();
 
 refs.searchForm.addEventListener('submit', onSearch);
@@ -42,23 +48,29 @@ function onSearch(e) {
       return;
     }
 
+    Notify.success(`Hooray! We found ${data.totalHits} images.`);
+
     clearGallery();
     const markup = createCardsMarkup(data.hits);
     addCardsMarkup(markup);
+    gallery.refresh();
     onShowBtn();
+    onCheckTotalHits(data.totalHits);
   });
 }
 
 function onLoadMore() {
   onDisableBtn();
 
-  setTimeout(() => {
-    imgsApiService.fetchImgs().then(data => {
-      const markup = createCardsMarkup(data.hits);
-      addCardsMarkup(markup);
-      onEnableBtn();
-    });
-  }, 3000);
+  imgsApiService.fetchImgs().then(data => {
+    console.log(data.totalHits);
+
+    onEnableBtn();
+    const markup = createCardsMarkup(data.hits);
+    addCardsMarkup(markup);
+    gallery.refresh();
+    onCheckTotalHits(data.totalHits);
+  });
 }
 
 function createCardsMarkup(dataCards) {
@@ -66,7 +78,7 @@ function createCardsMarkup(dataCards) {
     .map(
       dataCard =>
         `
-  <a class="photo-card" href="#">
+  <a class="photo-card" href="${dataCard.largeImageURL}">
     <div class="photo-card-thumb">
       <img class="photo-card-img" src="${dataCard.webformatURL}" alt="${dataCard.tags}" loading="lazy" />
     </div>  
@@ -99,6 +111,15 @@ function addCardsMarkup(markup) {
 
 function clearGallery() {
   refs.gallery.innerHTML = '';
+}
+
+function onCheckTotalHits(totalHits) {
+  if (totalHits <= refs.gallery.children.length) {
+    Notify.success(
+      "We're sorry, but you've reached the end of search results."
+    );
+    onHideBtn();
+  }
 }
 
 // for loadMore -------------------------------------
