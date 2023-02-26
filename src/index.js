@@ -55,7 +55,9 @@ async function onSearch(e) {
   imgsApiService.resetPage();
 
   try {
-    const data = await imgsApiService.fetchImgs();
+    const data = await imgsApiService.getImgs();
+
+    console.log(data);
 
     if (!data.hits.length) {
       Notify.failure(
@@ -80,7 +82,7 @@ async function onLoadMore() {
   onDisableBtn();
 
   try {
-    const data = await imgsApiService.fetchImgs();
+    const data = await imgsApiService.getImgs();
 
     onEnableBtn();
     renderGallery(data.hits);
