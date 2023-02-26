@@ -15,17 +15,18 @@ export default class ImgsApiService {
     this.page = 1;
   }
 
-  fetchImgs() {
+  async fetchImgs() {
     const url = `${BASE_URL}?${searchParams}&q=${this.searchQuery}&page=${this.page}`;
 
-    return fetch(url).then(response => {
-      if (!response.ok) {
-        throw new Error(response.status);
-      }
+    const response = await fetch(url);
 
-      this.#incrementPage();
-      return response.json();
-    });
+    if (!response.ok) {
+      throw new Error(response.status);
+    }
+
+    this.#incrementPage();
+
+    return await response.json();
   }
 
   #incrementPage() {

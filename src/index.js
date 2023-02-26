@@ -4,6 +4,8 @@ import ImgsApiService from './js/ImgsApiService';
 
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
+let isAllCollection = false;
+
 const refs = {
   searchForm: document.querySelector('#search-form'),
   gallery: document.querySelector('#gallery'),
@@ -18,13 +20,18 @@ const imgsApiService = new ImgsApiService();
 refs.searchForm.addEventListener('submit', onSearch);
 refs.loadMore.addEventListener('click', onLoadMore);
 
-function onSearch(e) {
+async function onSearch(e) {
   e.preventDefault();
 
   const currentSearchQuery = e.currentTarget.elements.searchQuery.value;
 
   if (imgsApiService.query === currentSearchQuery) {
     Notify.failure('Enter new value');
+
+    if (refs.gallery.children.length && !isAllCollection) {
+      onShowBtn();
+    }
+
     return;
   }
 
@@ -36,11 +43,20 @@ function onSearch(e) {
 
   if (!imgsApiService.searchQuery) {
     Notify.failure('Enter a valid value');
+
+    if (refs.gallery.children.length && !isAllCollection) {
+      onShowBtn();
+    }
+
     return;
   }
 
+  isAllCollection = false;
   imgsApiService.resetPage();
-  imgsApiService.fetchImgs().then(data => {
+
+  try {
+    const data = await imgsApiService.fetchImgs();
+
     if (!data.hits.length) {
       Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
@@ -51,26 +67,34 @@ function onSearch(e) {
     Notify.success(`Hooray! We found ${data.totalHits} images.`);
 
     clearGallery();
-    const markup = createCardsMarkup(data.hits);
-    addCardsMarkup(markup);
-    gallery.refresh();
+    renderGallery(data.hits);
     onShowBtn();
-    onCheckTotalHits(data.totalHits);
-  });
+    onCheckCollectionEnd(data.totalHits);
+  } catch (error) {
+    Notify.failure(error.message);
+    console.log(error);
+  }
 }
 
-function onLoadMore() {
+async function onLoadMore() {
   onDisableBtn();
 
-  imgsApiService.fetchImgs().then(data => {
-    console.log(data.totalHits);
+  try {
+    const data = await imgsApiService.fetchImgs();
 
     onEnableBtn();
-    const markup = createCardsMarkup(data.hits);
-    addCardsMarkup(markup);
-    gallery.refresh();
-    onCheckTotalHits(data.totalHits);
-  });
+    renderGallery(data.hits);
+    onCheckCollectionEnd(data.totalHits);
+  } catch (error) {
+    Notify.failure(error.message);
+    console.log(error);
+  }
+}
+
+function renderGallery(dataCards) {
+  const markup = createCardsMarkup(dataCards);
+  addCardsMarkup(markup);
+  gallery.refresh();
 }
 
 function createCardsMarkup(dataCards) {
@@ -113,11 +137,14 @@ function clearGallery() {
   refs.gallery.innerHTML = '';
 }
 
-function onCheckTotalHits(totalHits) {
+function onCheckCollectionEnd(totalHits) {
   if (totalHits <= refs.gallery.children.length) {
     Notify.success(
       "We're sorry, but you've reached the end of search results."
     );
+
+    isAllCollection = true;
+
     onHideBtn();
   }
 }
