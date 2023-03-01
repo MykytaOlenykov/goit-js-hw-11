@@ -17,7 +17,7 @@ export default class ImgsApiService {
     this.page = 1;
   }
 
-  async getImgs() {
+  async fetchImgs() {
     const url = `${BASE_URL}?${searchParams}&q=${this.searchQuery}&page=${this.page}`;
 
     const response = await axios.get(url);

@@ -1,6 +1,7 @@
 import SimpleLightbox from 'simplelightbox';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import ImgsApiService from './js/ImgsApiService';
+import onScrollAfterLoad from './js/scrollAfterLoad';
 
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
@@ -9,16 +10,16 @@ let isAllCollection = false;
 const refs = {
   searchForm: document.querySelector('#search-form'),
   gallery: document.querySelector('#gallery'),
-  loadMore: document.querySelector('#load-more'),
+  sentinel: document.querySelector('.sentinel'),
 };
 
 const gallery = new SimpleLightbox('.gallery a', {
   captionDelay: 250,
 });
+
 const imgsApiService = new ImgsApiService();
 
 refs.searchForm.addEventListener('submit', onSearch);
-refs.loadMore.addEventListener('click', onLoadMore);
 
 async function onSearch(e) {
   e.preventDefault();
@@ -28,36 +29,21 @@ async function onSearch(e) {
   if (imgsApiService.query === currentSearchQuery) {
     Notify.failure('Enter new value');
 
-    if (refs.gallery.children.length && !isAllCollection) {
-      onShowBtn();
-    }
-
     return;
-  }
-
-  if (!refs.loadMore.classList.contains('is-hidden')) {
-    onHideBtn();
   }
 
   imgsApiService.query = currentSearchQuery;
 
-  if (!imgsApiService.searchQuery) {
+  if (!imgsApiService.query) {
     Notify.failure('Enter a valid value');
-
-    if (refs.gallery.children.length && !isAllCollection) {
-      onShowBtn();
-    }
 
     return;
   }
 
-  isAllCollection = false;
   imgsApiService.resetPage();
 
   try {
-    const data = await imgsApiService.getImgs();
-
-    console.log(data);
+    const data = await imgsApiService.fetchImgs();
 
     if (!data.hits.length) {
       Notify.failure(
@@ -70,23 +56,8 @@ async function onSearch(e) {
 
     clearGallery();
     renderGallery(data.hits);
-    onShowBtn();
     onCheckCollectionEnd(data.totalHits);
-  } catch (error) {
-    Notify.failure(error.message);
-    console.log(error);
-  }
-}
-
-async function onLoadMore() {
-  onDisableBtn();
-
-  try {
-    const data = await imgsApiService.getImgs();
-
-    onEnableBtn();
-    renderGallery(data.hits);
-    onCheckCollectionEnd(data.totalHits);
+    registerIntersectionObserver();
   } catch (error) {
     Notify.failure(error.message);
     console.log(error);
@@ -146,29 +117,36 @@ function onCheckCollectionEnd(totalHits) {
     );
 
     isAllCollection = true;
-
-    onHideBtn();
   }
 }
 
-// for loadMore -------------------------------------
+function registerIntersectionObserver() {
+  const onEntry = entries => {
+    entries.forEach(entry => {
+      if (isAllCollection) {
+        observer.disconnect();
+        isAllCollection = false;
+      }
 
-function onShowBtn() {
-  refs.loadMore.classList.replace('is-hidden', 'is-active');
-}
+      if (entry.isIntersecting && imgsApiService.query) {
+        console.log('Load');
+        imgsApiService
+          .fetchImgs()
+          .then(data => {
+            renderGallery(data.hits);
+            onCheckCollectionEnd(data.totalHits);
+          })
+          .catch(error => {
+            Notify.failure(error.message);
+            console.log(error);
+          });
+      }
+    });
+  };
 
-function onHideBtn() {
-  refs.loadMore.classList.replace('is-active', 'is-hidden');
-}
-
-function onDisableBtn() {
-  refs.loadMore.setAttribute('disabled', '');
-  refs.loadMore.classList.remove('is-active');
-  refs.loadMore.classList.add('spinner');
-}
-
-function onEnableBtn() {
-  refs.loadMore.removeAttribute('disabled');
-  refs.loadMore.classList.add('is-active');
-  refs.loadMore.classList.remove('spinner');
+  const options = {
+    rootMargin: '200px',
+  };
+  const observer = new IntersectionObserver(onEntry, options);
+  observer.observe(refs.sentinel);
 }
