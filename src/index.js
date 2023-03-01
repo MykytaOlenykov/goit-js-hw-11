@@ -1,9 +1,7 @@
-import SimpleLightbox from 'simplelightbox';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import ImgsApiService from './js/ImgsApiService';
-import onScrollAfterLoad from './js/scrollAfterLoad';
-
-import 'simplelightbox/dist/simple-lightbox.min.css';
+import RenderGallery from './js/RenderGallery';
+import scrollToTop from './js/scrollToTop';
 
 let isAllCollection = false;
 
@@ -11,17 +9,15 @@ const refs = {
   searchForm: document.querySelector('#search-form'),
   gallery: document.querySelector('#gallery'),
   sentinel: document.querySelector('.sentinel'),
+  spinner: document.querySelector('.js-spinner'),
 };
 
-const gallery = new SimpleLightbox('.gallery a', {
-  captionDelay: 250,
-});
-
 const imgsApiService = new ImgsApiService();
+const renderGallery = new RenderGallery(refs.gallery);
 
 refs.searchForm.addEventListener('submit', onSearch);
 
-async function onSearch(e) {
+function onSearch(e) {
   e.preventDefault();
 
   const currentSearchQuery = e.currentTarget.elements.searchQuery.value;
@@ -40,74 +36,31 @@ async function onSearch(e) {
     return;
   }
 
+  isAllCollection = false;
+  scrollToTop();
+
   imgsApiService.resetPage();
 
-  try {
-    const data = await imgsApiService.fetchImgs();
+  imgsApiService
+    .fetchImgs()
+    .then(data => {
+      if (!data.hits.length) {
+        Notify.failure(
+          'Sorry, there are no images matching your search query. Please try again.'
+        );
+        return;
+      }
 
-    if (!data.hits.length) {
-      Notify.failure(
-        'Sorry, there are no images matching your search query. Please try again.'
-      );
-      return;
-    }
+      Notify.success(`Hooray! We found ${data.totalHits} images.`);
 
-    Notify.success(`Hooray! We found ${data.totalHits} images.`);
-
-    clearGallery();
-    renderGallery(data.hits);
-    onCheckCollectionEnd(data.totalHits);
-    registerIntersectionObserver();
-  } catch (error) {
-    Notify.failure(error.message);
-    console.log(error);
-  }
-}
-
-function renderGallery(dataCards) {
-  const markup = createCardsMarkup(dataCards);
-  addCardsMarkup(markup);
-  gallery.refresh();
-}
-
-function createCardsMarkup(dataCards) {
-  return dataCards
-    .map(
-      dataCard =>
-        `
-  <a class="photo-card" href="${dataCard.largeImageURL}">
-    <div class="photo-card-thumb">
-      <img class="photo-card-img" src="${dataCard.webformatURL}" alt="${dataCard.tags}" loading="lazy" />
-    </div>  
-    <div class="info">
-      <p class="info-item">
-        <b>Likes</b>
-        ${dataCard.likes}
-      </p>
-      <p class="info-item">
-        <b>Views</b>
-        ${dataCard.views}
-      </p>
-      <p class="info-item">
-        <b>Comments</b>
-        ${dataCard.comments}
-      </p>
-      <p class="info-item">
-        <b>Downloads</b>
-        ${dataCard.downloads}
-      </p>
-    </div>
-  </a>`
-    )
-    .join('');
-}
-
-function addCardsMarkup(markup) {
-  refs.gallery.insertAdjacentHTML('beforeend', markup);
-}
-
-function clearGallery() {
-  refs.gallery.innerHTML = '';
+      renderGallery.onClear();
+      renderGallery.onRender(data.hits);
+      onCheckCollectionEnd(data.totalHits);
+    })
+    .catch(error => {
+      Notify.failure(error.message);
+      console.log(error);
+    });
 }
 
 function onCheckCollectionEnd(totalHits) {
@@ -120,33 +73,37 @@ function onCheckCollectionEnd(totalHits) {
   }
 }
 
-function registerIntersectionObserver() {
-  const onEntry = entries => {
-    entries.forEach(entry => {
-      if (isAllCollection) {
-        observer.disconnect();
-        isAllCollection = false;
-      }
-
-      if (entry.isIntersecting && imgsApiService.query) {
-        console.log('Load');
-        imgsApiService
-          .fetchImgs()
-          .then(data => {
-            renderGallery(data.hits);
-            onCheckCollectionEnd(data.totalHits);
-          })
-          .catch(error => {
-            Notify.failure(error.message);
-            console.log(error);
-          });
-      }
-    });
-  };
-
-  const options = {
-    rootMargin: '200px',
-  };
-  const observer = new IntersectionObserver(onEntry, options);
-  observer.observe(refs.sentinel);
+function showSpinner() {
+  refs.spinner.classList.remove('is-hidden');
 }
+
+function hideSpinner() {
+  refs.spinner.classList.add('is-hidden');
+}
+
+const onEntry = entries => {
+  entries.forEach(entry => {
+    if (!isAllCollection && entry.isIntersecting && imgsApiService.query) {
+      console.log('load');
+      showSpinner();
+
+      imgsApiService
+        .fetchImgs()
+        .then(data => {
+          renderGallery.onRender(data.hits);
+          hideSpinner();
+          onCheckCollectionEnd(data.totalHits);
+        })
+        .catch(error => {
+          Notify.failure(error.message);
+          console.log(error);
+        });
+    }
+  });
+};
+
+const options = {
+  rootMargin: '150px',
+};
+const observer = new IntersectionObserver(onEntry, options);
+observer.observe(refs.sentinel);
