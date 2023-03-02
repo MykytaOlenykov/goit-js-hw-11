@@ -1,10 +1,59 @@
+import throttle from 'lodash.throttle';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import ImgsApiService from './js/ImgsApiService';
 import RenderGallery from './js/RenderGallery';
-import scrollToTop from './js/scrollToTop';
 import { showSpinner, hideSpinner } from './js/spinner';
 
-let isAllCollection = false;
+class RegisterIntersectionObserver {
+  #sentinelRef = null;
+  #observer = null;
+  #options = {};
+
+  constructor(sentinelRef) {
+    this.#sentinelRef = sentinelRef;
+    this.#options = {
+      rootMargin: '200px',
+    };
+  }
+
+  #onEntry(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        console.log('load');
+        showSpinner();
+
+        imgsApiService
+          .fetchImgs()
+          .then(data => {
+            renderGallery.onRender(data.hits);
+            onCheckCollectionEnd(data.totalHits);
+          })
+          .catch(error => {
+            Notify.failure(error.message);
+            console.log(error);
+          })
+          .finally(() => {
+            hideSpinner();
+          });
+      }
+    });
+  }
+
+  onRegister() {
+    this.#observer = new IntersectionObserver(
+      throttle(this.#onEntry, 500),
+      this.#options
+    );
+    this.#observer.observe(this.#sentinelRef);
+  }
+
+  onDisconnect() {
+    console.log(this.#observer);
+    if (this.#observer) {
+      this.#observer.disconnect();
+    }
+  }
+}
 
 const refs = {
   searchForm: document.querySelector('#search-form'),
@@ -14,6 +63,9 @@ const refs = {
 
 const imgsApiService = new ImgsApiService();
 const renderGallery = new RenderGallery(refs.gallery);
+const registerIntersectionObserver = new RegisterIntersectionObserver(
+  refs.sentinel
+);
 
 refs.searchForm.addEventListener('submit', onSearch);
 
@@ -28,9 +80,10 @@ function onSearch(e) {
     return;
   }
 
+  registerIntersectionObserver.onDisconnect();
+
   imgsApiService.query = currentSearchQuery;
 
-  scrollToTop();
   renderGallery.onClear();
   imgsApiService.resetPage();
   showSpinner();
@@ -49,7 +102,7 @@ function onSearch(e) {
 
       renderGallery.onRender(data.hits);
       onCheckCollectionEnd(data.totalHits);
-      registerIntersectionObserver();
+      registerIntersectionObserver.onRegister();
     })
     .catch(error => {
       Notify.failure(error.message);
@@ -82,42 +135,6 @@ function onCheckCollectionEnd(totalHits) {
       "We're sorry, but you've reached the end of search results."
     );
 
-    isAllCollection = true;
+    registerIntersectionObserver.onDisconnect();
   }
-}
-
-function registerIntersectionObserver() {
-  const onEntry = entries => {
-    entries.forEach(entry => {
-      if (isAllCollection) {
-        observer.disconnect();
-        isAllCollection = false;
-      }
-
-      if (entry.isIntersecting && imgsApiService.query) {
-        console.log('load');
-        showSpinner();
-
-        imgsApiService
-          .fetchImgs()
-          .then(data => {
-            renderGallery.onRender(data.hits);
-            onCheckCollectionEnd(data.totalHits);
-          })
-          .catch(error => {
-            Notify.failure(error.message);
-            console.log(error);
-          })
-          .finally(() => {
-            hideSpinner();
-          });
-      }
-    });
-  };
-
-  const options = {
-    rootMargin: '200px',
-  };
-  const observer = new IntersectionObserver(onEntry, options);
-  observer.observe(refs.sentinel);
 }
