@@ -17,24 +17,20 @@ class RegisterIntersectionObserver {
   }
 
   #onEntry(entries) {
-    entries.forEach(entry => {
+    entries.forEach(async entry => {
       if (entry.isIntersecting) {
-        console.log('load');
         showSpinner();
 
-        imgsApiService
-          .fetchImgs()
-          .then(data => {
-            renderGallery.onRender(data.hits);
-            onCheckCollectionEnd(data.totalHits);
-          })
-          .catch(error => {
-            Notify.failure(error.message);
-            console.log(error);
-          })
-          .finally(() => {
-            hideSpinner();
-          });
+        try {
+          const data = await imgsApiService.fetchImgs();
+          renderGallery.onRender(data.hits);
+          onCheckCollectionEnd(data.totalHits);
+        } catch (error) {
+          Notify.failure(error.message);
+          console.log(error);
+        }
+
+        hideSpinner();
       }
     });
   }
@@ -48,7 +44,6 @@ class RegisterIntersectionObserver {
   }
 
   onDisconnect() {
-    console.log(this.#observer);
     if (this.#observer) {
       this.#observer.disconnect();
     }
@@ -69,7 +64,7 @@ const registerIntersectionObserver = new RegisterIntersectionObserver(
 
 refs.searchForm.addEventListener('submit', onSearch);
 
-function onSearch(e) {
+async function onSearch(e) {
   e.preventDefault();
 
   const currentSearchQuery = e.currentTarget.elements.searchQuery.value;
@@ -88,29 +83,26 @@ function onSearch(e) {
   imgsApiService.resetPage();
   showSpinner();
 
-  imgsApiService
-    .fetchImgs()
-    .then(data => {
-      if (!data.hits.length) {
-        Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.'
-        );
-        return;
-      }
+  try {
+    const data = await imgsApiService.fetchImgs();
+    if (!data.hits.length) {
+      Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      return;
+    }
 
-      Notify.success(`Hooray! We found ${data.totalHits} images.`);
+    Notify.success(`Hooray! We found ${data.totalHits} images.`);
 
-      renderGallery.onRender(data.hits);
-      onCheckCollectionEnd(data.totalHits);
-      registerIntersectionObserver.onRegister();
-    })
-    .catch(error => {
-      Notify.failure(error.message);
-      console.log(error);
-    })
-    .finally(() => {
-      hideSpinner();
-    });
+    renderGallery.onRender(data.hits);
+    onCheckCollectionEnd(data.totalHits);
+    registerIntersectionObserver.onRegister();
+  } catch (error) {
+    Notify.failure(error.message);
+    console.log(error);
+  }
+
+  hideSpinner();
 }
 
 function validationSearchQueryValue(currentSearchQuery) {
