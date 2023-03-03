@@ -89,6 +89,9 @@ async function onSearch(e) {
       Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
       );
+
+      hideSpinner();
+
       return;
     }
 
