@@ -15,9 +15,9 @@ const refs = {
 const imgsApiService = new ImgsApiService();
 const renderGallery = new RenderGallery(refs.gallery);
 
-refs.searchForm.addEventListener('submit', onSearch);
+refs.searchForm.addEventListener('submit', onFormSubmit);
 
-async function onSearch(e) {
+async function onFormSubmit(e) {
   e.preventDefault();
 
   const currentSearchQuery = e.currentTarget.elements.searchQuery.value;
@@ -53,8 +53,13 @@ async function onSearch(e) {
     Notify.success(`Hooray! We found ${data.totalHits} images.`);
 
     renderGallery.onRender(data.hits);
-    onCheckCollectionEnd(data.totalHits);
-    registerIntersectionObserver();
+    const isAllColection = onCheckCollectionEnd(data.totalHits);
+
+    if (isAllColection) {
+      disconnectIntersectionObserver();
+    } else {
+      registerIntersectionObserver();
+    }
   } catch (error) {
     Notify.failure(error.message);
     console.log(error);
@@ -85,8 +90,10 @@ function onCheckCollectionEnd(totalHits) {
       "We're sorry, but you've reached the end of search results."
     );
 
-    disconnectIntersectionObserver();
+    return true;
   }
+
+  return false;
 }
 
 function registerIntersectionObserver() {
@@ -102,7 +109,11 @@ function registerIntersectionObserver() {
         try {
           const data = await imgsApiService.fetchImgs();
           renderGallery.onRender(data.hits);
-          onCheckCollectionEnd(data.totalHits);
+          const isAllColection = onCheckCollectionEnd(data.totalHits);
+
+          if (isAllColection) {
+            disconnectIntersectionObserver();
+          }
         } catch (error) {
           Notify.failure(error.message);
           console.log(error);
