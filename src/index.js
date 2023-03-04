@@ -20,7 +20,7 @@ refs.searchForm.addEventListener('submit', onFormSubmit);
 async function onFormSubmit(e) {
   e.preventDefault();
 
-  const currentSearchQuery = e.currentTarget.elements.searchQuery.value;
+  const currentSearchQuery = e.currentTarget.elements.searchQuery.value.trim();
 
   const isValid = validationSearchQueryValue(currentSearchQuery);
 
@@ -64,14 +64,14 @@ async function onFormSubmit(e) {
 }
 
 function validationSearchQueryValue(currentSearchQuery) {
-  if (imgsApiService.query === currentSearchQuery) {
-    Notify.failure('Enter new value');
+  if (!currentSearchQuery) {
+    Notify.failure('Enter a valid value');
 
     return false;
   }
 
-  if (!currentSearchQuery) {
-    Notify.failure('Enter a valid value');
+  if (imgsApiService.query === currentSearchQuery) {
+    Notify.failure('Enter new value');
 
     return false;
   }
