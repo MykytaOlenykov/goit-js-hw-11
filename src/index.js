@@ -53,13 +53,8 @@ async function onFormSubmit(e) {
     Notify.success(`Hooray! We found ${data.totalHits} images.`);
 
     renderGallery.onRender(data.hits);
-    const isAllColection = onCheckCollectionEnd(data.totalHits);
-
-    if (isAllColection) {
-      disconnectIntersectionObserver();
-    } else {
-      registerIntersectionObserver();
-    }
+    registerIntersectionObserver();
+    onCheckCollectionEnd(data.totalHits);
   } catch (error) {
     Notify.failure(error.message);
     console.log(error);
@@ -90,10 +85,8 @@ function onCheckCollectionEnd(totalHits) {
       "We're sorry, but you've reached the end of search results."
     );
 
-    return true;
+    disconnectIntersectionObserver();
   }
-
-  return false;
 }
 
 function registerIntersectionObserver() {
@@ -109,11 +102,7 @@ function registerIntersectionObserver() {
         try {
           const data = await imgsApiService.fetchImgs();
           renderGallery.onRender(data.hits);
-          const isAllColection = onCheckCollectionEnd(data.totalHits);
-
-          if (isAllColection) {
-            disconnectIntersectionObserver();
-          }
+          onCheckCollectionEnd(data.totalHits);
         } catch (error) {
           Notify.failure(error.message);
           console.log(error);
