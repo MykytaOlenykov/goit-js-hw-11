@@ -12,13 +12,18 @@ const searchParams = new URLSearchParams({
 });
 
 export default class ImgsApiService {
+  #searchQuery;
+  #page;
+
   constructor() {
-    this.searchQuery = '';
-    this.page = 1;
+    this.#searchQuery = '';
+    this.#page = 1;
   }
 
   async fetchImgs() {
-    const url = `${BASE_URL}?${searchParams}&q=${this.searchQuery}&page=${this.page}`;
+    const url = `${BASE_URL}?${searchParams}&q=${this.#searchQuery}&page=${
+      this.#page
+    }`;
 
     const response = await axios.get(url);
 
@@ -28,18 +33,18 @@ export default class ImgsApiService {
   }
 
   #incrementPage() {
-    this.page += 1;
+    this.#page += 1;
   }
 
   resetPage() {
-    this.page = 1;
+    this.#page = 1;
   }
 
   set query(newQuery) {
-    this.searchQuery = newQuery;
+    this.#searchQuery = newQuery;
   }
 
   get query() {
-    return this.searchQuery;
+    return this.#searchQuery;
   }
 }

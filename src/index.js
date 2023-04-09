@@ -15,9 +15,9 @@ const refs = {
 const imgsApiService = new ImgsApiService();
 const renderGallery = new RenderGallery(refs.gallery);
 
-refs.searchForm.addEventListener('submit', onFormSubmit);
+refs.searchForm.addEventListener('submit', handleFormSubmit);
 
-async function onFormSubmit(e) {
+async function handleFormSubmit(e) {
   e.preventDefault();
 
   const currentSearchQuery = e.currentTarget.elements.searchQuery.value.trim();
@@ -58,9 +58,9 @@ async function onFormSubmit(e) {
   } catch (error) {
     Notify.failure(error.message);
     console.log(error);
+  } finally {
+    hideSpinner();
   }
-
-  hideSpinner();
 }
 
 function validationSearchQueryValue(currentSearchQuery) {
