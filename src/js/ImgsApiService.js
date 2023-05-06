@@ -17,17 +17,17 @@ export default class ImgsApiService {
 
   constructor() {
     this.#searchQuery = '';
-    this.#page = 1;
+    this.#page = 0;
   }
 
   async fetchImgs() {
+    this.#incrementPage();
+
     const url = `${BASE_URL}?${searchParams}&q=${this.#searchQuery}&page=${
       this.#page
     }`;
 
     const response = await axios.get(url);
-
-    this.#incrementPage();
 
     return response.data;
   }
@@ -37,7 +37,7 @@ export default class ImgsApiService {
   }
 
   resetPage() {
-    this.#page = 1;
+    this.#page = 0;
   }
 
   set query(newQuery) {

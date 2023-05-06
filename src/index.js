@@ -1,4 +1,3 @@
-import throttle from 'lodash.throttle';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import ImgsApiService from './js/ImgsApiService';
 import RenderGallery from './js/RenderGallery';
@@ -113,7 +112,7 @@ function registerIntersectionObserver() {
     });
   };
 
-  observer = new IntersectionObserver(throttle(onEntry, 500), options);
+  observer = new IntersectionObserver(onEntry, options);
   observer.observe(refs.sentinel);
 }
 
